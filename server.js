@@ -21,13 +21,16 @@ if (MongoStore.default) {
 const allowedOrigins = [
     /^http:\/\/localhost(:\d+)?$/,
     /^http:\/\/127\.0\.0\.1(:\d+)?$/,
+    'https://rice-ecommerce.vercel.app',
 ];
 
 app.use(cors({
     origin: function (origin, callback) {
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
-        const isAllowed = allowedOrigins.some((pattern) => pattern.test(origin));
+        const isAllowed = allowedOrigins.some((pattern) =>
+            typeof pattern === 'string' ? pattern === origin : pattern.test(origin)
+        );
         if (isAllowed) {
             return callback(null, true);
         }
@@ -37,6 +40,8 @@ app.use(cors({
     credentials: true
 }));
 app.use(express.json());
+
+const isProduction = process.env.NODE_ENV === 'production';
 
 app.use(session({
     secret: process.env.JWT_SECRET || 'secret',
@@ -49,8 +54,8 @@ app.use(session({
     cookie: {
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
         httpOnly: true,
-        // secure: process.env.NODE_ENV === 'production', // Set to true in prod with HTTPS
-        sameSite: 'lax'
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax'
     }
 }));
 
